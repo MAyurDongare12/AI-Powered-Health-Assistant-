@@ -1,0 +1,99 @@
+ import tkinter as tk
+from tkinter import messagebox
+import pandas as pd
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
+import numpy as np
+
+# Sample Health Data: Age, Blood Pressure, Cholesterol, Exercise, Health Status (0 = Healthy, 1 = At Risk)
+data = {
+    'Age': [25, 30, 35, 40, 45, 50, 55, 60, 65, 70],
+    'Blood Pressure': [120, 130, 125, 135, 145, 155, 160, 170, 180, 190],
+    'Cholesterol': [200, 210, 215, 220, 230, 240, 250, 260, 270, 280],
+    'Exercise': [1, 0, 1, 1, 0, 0, 1, 1, 0, 0],  # 1 = Regular Exercise, 0 = No Exercise
+    'Health Status': [0, 0, 0, 0, 1, 1, 1, 1, 1, 1]  # 0 = Healthy, 1 = At Risk
+}
+
+# Convert the data into a pandas DataFrame
+df = pd.DataFrame(data)
+
+# Define features (X) and target (y)
+X = df.drop('Health Status', axis=1)  # Features: Age, BP, Cholesterol, Exercise
+y = df['Health Status']  # Target: Health status (0 or 1)
+
+# Split the data into training and testing sets (80% training, 20% testing)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Initialize and train the RandomForest model
+model = RandomForestClassifier(random_state=42)
+model.fit(X_train, y_train)
+
+# Evaluate the model accuracy
+y_pred = model.predict(X_test)
+accuracy = accuracy_score(y_test, y_pred)
+
+# Function to predict health status based on user input
+def predict_health_status(age, blood_pressure, cholesterol, exercise):
+    try:
+        # Convert input values to a NumPy array and reshape for prediction
+        input_data = np.array([age, blood_pressure, cholesterol, exercise]).reshape(1, -1)
+        prediction = model.predict(input_data)[0]
+        
+        return "You are in good health!" if prediction == 0 else "You are at risk! Please consult a healthcare provider."
+    
+    except Exception as e:
+        return f"Error: {str(e)}"
+
+# Define the function to be called when the user clicks the "Predict" button
+def on_predict_click():
+    try:
+        # Get user inputs and convert to appropriate data types
+        age = int(entry_age.get())
+        blood_pressure = int(entry_blood_pressure.get())
+        cholesterol = int(entry_cholesterol.get())
+        exercise = int(entry_exercise.get())
+
+        # Validate exercise input (only 0 or 1)
+        if exercise not in [0, 1]:
+            messagebox.showerror("Invalid Input", "Exercise value must be 0 (No) or 1 (Yes).")
+            return
+        
+        # Get prediction result
+        result = predict_health_status(age, blood_pressure, cholesterol, exercise)
+        
+        # Display the result in a pop-up message box
+        messagebox.showinfo("Prediction Result", result)
+
+    except ValueError:
+        messagebox.showerror("Invalid Input", "Please enter valid numerical values.")
+
+# Create the main window for the Tkinter GUI
+root = tk.Tk()
+root.title("AI-Powered Health Assistant")
+root.geometry("400x350")
+root.resizable(False, False)  # Prevent window resizing
+
+# Create labels and entry fields for user input
+tk.Label(root, text="Age:").pack(pady=5)
+entry_age = tk.Entry(root)
+entry_age.pack(pady=5)
+
+tk.Label(root, text="Blood Pressure (mmHg):").pack(pady=5)
+entry_blood_pressure = tk.Entry(root)
+entry_blood_pressure.pack(pady=5)
+
+tk.Label(root, text="Cholesterol Level (mg/dL):").pack(pady=5)
+entry_cholesterol = tk.Entry(root)
+entry_cholesterol.pack(pady=5)
+
+tk.Label(root, text="Do you exercise regularly? (1 for Yes, 0 for No):").pack(pady=5)
+entry_exercise = tk.Entry(root)
+entry_exercise.pack(pady=5)
+
+# Create and place the Predict button
+predict_button = tk.Button(root, text="Predict Health Status", command=on_predict_click)
+predict_button.pack(pady=20)
+
+# Start the Tkinter event loop to display the GUI
+root.mainloop()
